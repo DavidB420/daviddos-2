@@ -702,7 +702,6 @@ jle keyview
 dec word [skiplines]
 jmp redrawtext
 newfile:
-call createfile
 mov di,file
 xor al,al
 mov cx,24576
@@ -724,6 +723,18 @@ call writefile
 mov word [lastbyte],1
 jmp continueedit
 writefile:
+pusha
+mov ch,0
+mov cl,2
+mov dh,1
+mov dl,byte [bootdev]
+mov ah,2
+mov al,14
+mov si,fat
+mov bx,si
+int 13h
+call createfile
+popa
 mov word [location],bx
 mov di,freeclusts
 mov cx,128
@@ -946,7 +957,7 @@ freeclusts times 128 dw 0
 count dw 0
 location dw 0
 createfile:
-mov di,disk_buffer
+mov di,fat
 mov cx,224
 findemptyrootentry:
 mov byte al,[di]
@@ -988,15 +999,110 @@ mov dh,1
 mov dl,byte [bootdev]
 mov ah,3
 mov al,14
-mov si,disk_buffer
+mov si,fat
 mov bx,si
 int 13h
 ret
 savefile:
+mov ch,0
+mov cl,2
+mov dh,1
+mov dl,byte [bootdev]
+mov ah,2
+mov al,14
+mov si,fat
+mov bx,si
+int 13h
+mov di,fat
+mov si,fat12str
+mov bx,0
+mov ax,0
+findfn6:
+mov cx,11
+cld
+repe cmpsb
+je foundfn6
+inc bx
+add ax,32
+mov si,fat12str
+mov di,fat
+add di,ax
+cmp bx,224
+jle findfn6
+cmp bx,224
+je continuesave
+foundfn6:
+mov ax,32
+mul bx
+mov di,fat
+add di,ax
+mov byte [di],229
+mov ch,0
+mov cl,2
+mov dh,1
+mov dl,byte [bootdev]
+mov ah,3
+mov al,14
+mov si,fat
+mov bx,si
+int 13h
+mov ax, word [es:di+26]
+mov word [tmp],ax
+push ax
+mov ch,0
+mov cl,2
+mov dh,0
+mov dl,byte [bootdev]
+mov ah,2
+mov al,9
+mov si,fat
+mov bx,si
+int 13h
+pop ax
+moreCluster:
+mov bx,3
+mul bx
+mov bx,2
+div bx
+mov si,fat
+add si,ax
+mov ax, word [si]
+test dx,dx
+jz even
+odd:
+push ax
+and ax,0x000F
+mov word [si],ax
+pop ax
+shr ax,4
+jmp calcclustcount
+even:
+push ax
+and ax,0xF000
+mov word [si],ax
+pop ax
+and ax,0x0fff
+calcclustcount:
+mov word [tmp],ax
+cmp ax,0ff8h
+jae donefat
+jmp moreCluster
+donefat:
+mov ch,0
+mov cl,2
+mov dh,0
+mov dl,byte [bootdev]
+mov ah,3
+mov al,9
+mov si,fat
+mov bx,si
+int 13h
+continuesave:
 mov ax,fat12str
 mov word cx,[file_size]
 push bx
 mov bx,9100h
 call writefile
 pop bx
+mov word bx,[skiplines]
 jmp redrawtext
