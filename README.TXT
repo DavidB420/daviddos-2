@@ -1,9 +1,9 @@
                       -----------------------------------
-                      |   DAVIDDOS VERSION 2.0   |
-                      |                                         |
-                      |                                         |
-                      |            README                 |
-                      |                                         |  
+                      |      DAVIDDOS VERSION 2.0       |
+                      |                                 |
+                      |                                 |
+                      |            README               |
+                      |                                 |  
                       -----------------------------------
 
 Copyright (C) 2019 David Badiei
